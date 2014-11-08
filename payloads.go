@@ -1,12 +1,17 @@
 package webhooks
 
 import (
+	"net/http"
 	"time"
 )
 
 type PayloadBase struct {
-	Sender     *User       `json:"sender"`
-	Repository *Repository `json:"repository"`
+	Sender     *User               `json:"sender"`
+	Repository *Repository         `json:"repository"`
+	Delivery   string              `json:"-"`
+	UserAgent  string              `json:"-"`
+	w          http.ResponseWriter `json:"-"`
+	r          *http.Request       `json:"-"`
 }
 
 type User struct {
@@ -115,4 +120,38 @@ type Comment struct {
 type CommitCommentEvent struct {
 	PayloadBase
 	Comment *Comment `json:"comment"`
+}
+
+type PushEvent struct {
+	PayloadBase
+	Ref        string     `json:"ref"`
+	Before     string     `json:"before"`
+	After      string     `json:"after"`
+	Created    bool       `json:"created"`
+	Deleted    bool       `json:"deleted"`
+	Forced     bool       `json:"forced"`
+	BaseRef    string     `json:"base_ref"`
+	Compare    string     `json:"compare"`
+	Commits    []*Commit  `json:"commits"`
+	HeadCommit *Commit    `json:"head_commit"`
+	Pusher     *Committer `json:"pusher"`
+}
+
+type Commit struct {
+	Id        string     `json:"id"`
+	Distinct  bool       `json:"distinct"`
+	Message   string     `json:"message"`
+	Timestamp time.Time  `json:"timestamp"`
+	Url       string     `json:"url"`
+	Author    *Committer `json:"author"`
+	Committer *Committer `json:"committer"`
+	Added     []string   `json:"added"`
+	Removed   []string   `json:"removed"`
+	Modified  []string   `json:"modified"`
+}
+
+type Committer struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
 }
