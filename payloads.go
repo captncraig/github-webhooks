@@ -1,17 +1,12 @@
 package webhooks
 
 import (
-	"net/http"
 	"time"
 )
 
 type PayloadBase struct {
-	Sender     *User               `json:"sender"`
-	Repository *Repository         `json:"repository"`
-	Delivery   string              `json:"-"`
-	UserAgent  string              `json:"-"`
-	w          http.ResponseWriter `json:"-"`
-	r          *http.Request       `json:"-"`
+	Sender     *User       `json:"sender"`
+	Repository *Repository `json:"repository"`
 }
 
 type User struct {

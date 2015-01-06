@@ -7,7 +7,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
+
+var secret = os.Getenv("github-hook-secret")
 
 type WebhookContext struct {
 	Delivery  string
@@ -20,6 +23,7 @@ type WebhookContext struct {
 type WebhookListener struct {
 	OnCommitComment func(*CommitCommentEvent, *WebhookContext)
 	OnPush          func(*PushEvent, *WebhookContext)
+	OnAny           func(*PayloadBase, *WebhookContext)
 }
 
 func (l *WebhookListener) GetHttpListener() http.HandlerFunc {
@@ -49,12 +53,19 @@ func (l *WebhookListener) GetHttpListener() http.HandlerFunc {
 				l.OnPush(&data, &ctx)
 			}
 		}
+		if l.OnAny != nil {
+			data := PayloadBase{}
+			json.Unmarshal(body, &data)
+			l.OnAny(&data, &ctx)
+		}
 	}
 }
 
 func verifySha(signature string, body []byte) bool {
-	secret := []byte("qwertyuiop")
-	mac := hmac.New(sha1.New, secret)
+	if secret == "" {
+		return true
+	}
+	mac := hmac.New(sha1.New, []byte(secret))
 	_, err := mac.Write(body)
 	if err != nil {
 		return false
