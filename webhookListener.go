@@ -5,74 +5,121 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
+	"reflect"
 )
-
-var secret = os.Getenv("github-hook-secret")
 
 type WebhookContext struct {
 	Delivery  string
 	UserAgent string
 	Event     string
+	Signature string
 	W         http.ResponseWriter
 	R         *http.Request
+	Body      []byte
+}
+
+type eventTypeDefinition struct {
+	Method   string
+	Template interface{}
 }
 
 type WebhookListener struct {
 	OnCommitComment func(*CommitCommentEvent, *WebhookContext)
+	OnCreate        func(*CreateEvent, *WebhookContext)
+	OnDelete        func(*DeleteEvent, *WebhookContext)
+	OnPing          func(*PingEvent, *WebhookContext)
 	OnPush          func(*PushEvent, *WebhookContext)
-	OnAny           func(*PayloadBase, *WebhookContext)
+}
+
+// to avoid repetition, invoke handlers via reflection.
+// event type header to Method name, and a prototype struct for the first argument
+var eventTypes = map[string]eventTypeDefinition{
+	"commit_comment": {"OnCommitComment", CommitCommentEvent{}},
+	"create":         {"OnCreate", CreateEvent{}},
+	"delete":         {"OnDelete", DeleteEvent{}},
+	"ping":           {"OnPing", PingEvent{}},
 }
 
 func (l *WebhookListener) GetHttpListener() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := WebhookContext{W: w, R: r}
+		ctx := &WebhookContext{W: w, R: r}
 		ctx.Delivery = r.Header.Get("X-Github-Delivery")
 		ctx.UserAgent = r.UserAgent()
 		ctx.Event = r.Header.Get("X-Github-Event")
-		signature := r.Header.Get("X-Hub-Signature")
+		ctx.Signature = r.Header.Get("X-Hub-Signature")
 		body, _ := ioutil.ReadAll(r.Body)
-		if !verifySha(signature, body) {
+		ctx.Body = body
+
+		if !Validator(ctx) {
 			w.WriteHeader(400)
 			w.Write([]byte("Signature failure"))
 			return
 		}
-		switch ctx.Event {
-		case "commit_comment":
-			data := CommitCommentEvent{}
-			json.Unmarshal(body, &data)
-			if l.OnCommitComment != nil {
-				l.OnCommitComment(&data, &ctx)
-			}
-		case "push":
-			data := PushEvent{}
-			json.Unmarshal(body, &data)
-			if l.OnPush != nil {
-				l.OnPush(&data, &ctx)
-			}
+
+		log.Println(ctx.Event)
+		eventDef, ok := eventTypes[ctx.Event]
+		if !ok {
+			log.Printf("Unknown event type: %s", ctx.Event)
+			w.WriteHeader(500)
+			w.Write([]byte("Unknown Event type"))
+			return
 		}
-		if l.OnAny != nil {
-			data := PayloadBase{}
-			json.Unmarshal(body, &data)
-			l.OnAny(&data, &ctx)
+
+		// find method to call
+		listener := reflect.ValueOf(*l)
+		field := listener.FieldByName(eventDef.Method)
+		if !field.IsValid() {
+			log.Printf("Invalid Field: %s", eventDef.Method)
+			w.WriteHeader(500)
+			return
 		}
+		if field.IsNil() {
+			return
+		}
+
+		// make new object and deserialize payload
+		typ := reflect.TypeOf(eventDef.Template)
+		instanceValue := reflect.New(typ)
+		instance := instanceValue.Interface()
+		err := json.Unmarshal(body, instance)
+		if err != nil {
+			log.Printf("Error deserializing: %s", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		// finally call the function.
+		field.Call([]reflect.Value{instanceValue, reflect.ValueOf(ctx)})
 	}
 }
 
-func verifySha(signature string, body []byte) bool {
-	if secret == "" {
-		return true
+type ValidatorFunc func(*WebhookContext) bool
+
+var Validator ValidatorFunc = func(*WebhookContext) bool {
+	return true
+}
+
+const GithubHookSecretEnv = "github-hook-secret"
+
+func init() {
+	// If environment variable is set, replace no-op validator with one that verifies signature.
+	if secret := os.Getenv(GithubHookSecretEnv); secret != "" {
+		Validator = func(ctx *WebhookContext) bool {
+			mac := hmac.New(sha1.New, []byte(secret))
+			_, err := mac.Write(ctx.Body)
+			if err != nil {
+				return false
+			}
+			sig, err := hex.DecodeString(ctx.Delivery[5:])
+			if err != nil {
+				return false
+			}
+			return hmac.Equal(mac.Sum(nil), sig)
+		}
 	}
-	mac := hmac.New(sha1.New, []byte(secret))
-	_, err := mac.Write(body)
-	if err != nil {
-		return false
-	}
-	sig, err := hex.DecodeString(signature[5:])
-	if err != nil {
-		return false
-	}
-	return hmac.Equal(mac.Sum(nil), sig)
 }

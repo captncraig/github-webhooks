@@ -112,9 +112,52 @@ type Comment struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type Commit struct {
+	Id        string     `json:"id"`
+	Distinct  bool       `json:"distinct"`
+	Message   string     `json:"message"`
+	Timestamp time.Time  `json:"timestamp"`
+	Url       string     `json:"url"`
+	Author    *Committer `json:"author"`
+	Committer *Committer `json:"committer"`
+	Added     []string   `json:"added"`
+	Removed   []string   `json:"removed"`
+	Modified  []string   `json:"modified"`
+}
+
+type Hook struct {
+}
+
+type Committer struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
+}
+
 type CommitCommentEvent struct {
 	PayloadBase
 	Comment *Comment `json:"comment"`
+}
+
+type CreateEvent struct {
+	PayloadBase
+	RefType      string `json:"ref_type"`
+	Ref          string `json:"ref"`
+	MasterBranch string `json:"master_branch"`
+	Description  string `json:"description"`
+}
+
+type DeleteEvent struct {
+	PayloadBase
+	RefType string `json:"ref_type"`
+	Ref     string `json:"ref"`
+}
+
+type PingEvent struct {
+	PayloadBase
+	Zen    string `json:"zen"`
+	HookId int64  `json:"hook_id"`
+	Hook   *Hook  `json:"hook"`
 }
 
 type PushEvent struct {
@@ -130,23 +173,4 @@ type PushEvent struct {
 	Commits    []*Commit  `json:"commits"`
 	HeadCommit *Commit    `json:"head_commit"`
 	Pusher     *Committer `json:"pusher"`
-}
-
-type Commit struct {
-	Id        string     `json:"id"`
-	Distinct  bool       `json:"distinct"`
-	Message   string     `json:"message"`
-	Timestamp time.Time  `json:"timestamp"`
-	Url       string     `json:"url"`
-	Author    *Committer `json:"author"`
-	Committer *Committer `json:"committer"`
-	Added     []string   `json:"added"`
-	Removed   []string   `json:"removed"`
-	Modified  []string   `json:"modified"`
-}
-
-type Committer struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
 }

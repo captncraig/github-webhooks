@@ -17,6 +17,11 @@ func main() {
 		fmt.Println(e)
 	}
 
-	http.HandleFunc("/qwertyuiop", listener.GetHttpListener())
-	http.ListenAndServe(":12345", nil)
+	listener.OnPing = func(e *webhooks.PingEvent, ctx *webhooks.WebhookContext) {
+
+		fmt.Println(e.HookId, e.Zen)
+	}
+
+	http.HandleFunc("/hook", listener.GetHttpListener())
+	http.ListenAndServe(":8787", nil)
 }
