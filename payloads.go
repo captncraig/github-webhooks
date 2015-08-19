@@ -165,7 +165,7 @@ type Issue struct {
 	CommentCount int64       `json:"comments"`
 	CreatedAt    time.Time   `json:"created_at"`
 	UpdatedAt    time.Time   `json:"updated_at"`
-	ClosedAt     time.Time   `json:"closed_at"`
+	ClosedAt     *time.Time  `json:"closed_at"`
 	Body         string      `json:"body"`
 }
 
@@ -174,7 +174,7 @@ type PullRequest struct {
 	DiffUrl            string      `json:"diff_url"`
 	PatchUrl           string      `json:"patch_url"`
 	IssueUrl           string      `json:"issue_url"`
-	MergedAt           time.Time   `json:"merged_at"`
+	MergedAt           *time.Time  `json:"merged_at"`
 	MergeCommitSha     string      `json:"merge_commit_sha"`
 	CommitsUrl         string      `json:"commits_url"`
 	ReviewCommentsUrl  string      `json:"review_comments_url"`
