@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -32,6 +31,7 @@ type WebhookListener struct {
 	OnCommitComment func(*CommitCommentEvent, *WebhookContext)
 	OnCreate        func(*CreateEvent, *WebhookContext)
 	OnDelete        func(*DeleteEvent, *WebhookContext)
+	OnDeployment    func(*DeploymentEvent, *WebhookContext)
 	OnPing          func(*PingEvent, *WebhookContext)
 	OnPush          func(*PushEvent, *WebhookContext)
 }
@@ -42,6 +42,7 @@ var eventTypes = map[string]eventTypeDefinition{
 	"commit_comment": {"OnCommitComment", CommitCommentEvent{}},
 	"create":         {"OnCreate", CreateEvent{}},
 	"delete":         {"OnDelete", DeleteEvent{}},
+	"deployment":     {"OnDeployment", DeploymentEvent{}},
 	"ping":           {"OnPing", PingEvent{}},
 }
 
@@ -61,7 +62,6 @@ func (l *WebhookListener) GetHttpListener() http.HandlerFunc {
 			return
 		}
 
-		log.Println(ctx.Event)
 		eventDef, ok := eventTypes[ctx.Event]
 		if !ok {
 			log.Printf("Unknown event type: %s", ctx.Event)

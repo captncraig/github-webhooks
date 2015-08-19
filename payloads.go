@@ -126,6 +126,19 @@ type Commit struct {
 }
 
 type Hook struct {
+	Id        int64     `json:"id"`
+	Url       string    `json:"url"`
+	TestUrl   string    `json:"test_url"`
+	PingUrl   string    `json:"ping_url"`
+	Name      string    `json:"name"`
+	Events    []string  `json:"events"`
+	Active    bool      `json:"active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Config    struct {
+		Url         string `json:"url"`
+		ContentType string `json:"content_type"`
+	} `json:"config"`
 }
 
 type Committer struct {
@@ -151,6 +164,25 @@ type DeleteEvent struct {
 	PayloadBase
 	RefType string `json:"ref_type"`
 	Ref     string `json:"ref"`
+}
+
+type DeploymentEvent struct {
+	PayloadBase
+	Deployment struct {
+		Url           string      `json:"url"`
+		Id            int64       `json:"id"`
+		Sha           string      `json:"sha"`
+		Ref           string      `json:"ref"`
+		Task          string      `json:"task"`
+		Payload       interface{} `json:"payload"`
+		Environment   string      `json:"environment"`
+		Description   string      `json:"description"`
+		Creator       *Committer  `json:"creator"`
+		CreatedAt     time.Time   `json:"created_at"`
+		UpdatedAt     time.Time   `json:"updated_at"`
+		StatusesUrl   string      `json:"statuses_url"`
+		RepositoryUrl string      `json:"repository_url"`
+	} `json:"deployment"`
 }
 
 type PingEvent struct {
