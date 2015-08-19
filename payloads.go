@@ -141,6 +141,58 @@ type Hook struct {
 	} `json:"config"`
 }
 
+type Label struct {
+	Url   string `json:"url"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
+type Issue struct {
+	Url          string      `json:"url"`
+	LabelsUrl    string      `json:"labels_url"`
+	CommentsUrl  string      `json:"comments_url"`
+	EventsUrl    string      `json:"events_url"`
+	HtmlUrl      string      `json:"html_url"`
+	Id           int64       `json:"id"`
+	Number       int64       `json:"number"`
+	Title        string      `json:"title"`
+	User         *User       `json:"user"`
+	Labels       []*Label    `json:"labels"`
+	State        string      `json:"state"`
+	Locked       bool        `json:"locked"`
+	Assignee     *User       `json:"assignee"`
+	Milestone    interface{} `json:"milestone"`
+	CommentCount int64       `json:"comments"`
+	CreatedAt    time.Time   `json:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at"`
+	ClosedAt     time.Time   `json:"closed_at"`
+	Body         string      `json:"body"`
+}
+
+type PullRequest struct {
+	Issue
+	DiffUrl            string      `json:"diff_url"`
+	PatchUrl           string      `json:"patch_url"`
+	IssueUrl           string      `json:"issue_url"`
+	MergedAt           time.Time   `json:"merged_at"`
+	MergeCommitSha     string      `json:"merge_commit_sha"`
+	CommitsUrl         string      `json:"commits_url"`
+	ReviewCommentsUrl  string      `json:"review_comments_url"`
+	ReviewCommentUrl   string      `json:"review_comment_url"`
+	StatusesUrl        string      `json:"statuses_url"`
+	Head               interface{} `json:"head"` // not sure what this type is quite yet
+	Base               interface{} `json:"base"` // same type as Head
+	Merged             bool        `json:"merged"`
+	Mergeable          bool        `json:"mergable"`
+	MergableState      string      `json:"mergable_state"`
+	MergedBy           *User       `json:"merged_by"`
+	ReviewCommentCount int64       `json:"review_comments"`
+	CommitCount        int64       `json:"commits"`
+	Additions          int64       `json:"additions"`
+	Deletions          int64       `json:"deletions"`
+	ChangedFiles       int64       `json:"changed_files"`
+}
+
 type Committer struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
@@ -177,7 +229,7 @@ type DeploymentEvent struct {
 		Payload       interface{} `json:"payload"`
 		Environment   string      `json:"environment"`
 		Description   string      `json:"description"`
-		Creator       *Committer  `json:"creator"`
+		Creator       *User       `json:"creator"`
 		CreatedAt     time.Time   `json:"created_at"`
 		UpdatedAt     time.Time   `json:"updated_at"`
 		StatusesUrl   string      `json:"statuses_url"`
@@ -185,11 +237,24 @@ type DeploymentEvent struct {
 	} `json:"deployment"`
 }
 
+type IssueCommentEvent struct {
+	PayloadBase
+	Action  *Issue `json:"issue"`
+	Comment string `json:"comment"`
+}
+
 type PingEvent struct {
 	PayloadBase
 	Zen    string `json:"zen"`
 	HookId int64  `json:"hook_id"`
 	Hook   *Hook  `json:"hook"`
+}
+
+type PullRequestEvent struct {
+	PayloadBase
+	Action      string       `json:"action"`
+	Number      int64        `json:"number"`
+	PullRequest *PullRequest `json:"pull_request"`
 }
 
 type PushEvent struct {

@@ -32,7 +32,9 @@ type WebhookListener struct {
 	OnCreate        func(*CreateEvent, *WebhookContext)
 	OnDelete        func(*DeleteEvent, *WebhookContext)
 	OnDeployment    func(*DeploymentEvent, *WebhookContext)
+	OnIssueComment  func(*IssueCommentEvent, *WebhookContext)
 	OnPing          func(*PingEvent, *WebhookContext)
+	OnPullRequest   func(*PullRequestEvent, *WebhookContext)
 	OnPush          func(*PushEvent, *WebhookContext)
 }
 
@@ -43,7 +45,10 @@ var eventTypes = map[string]eventTypeDefinition{
 	"create":         {"OnCreate", CreateEvent{}},
 	"delete":         {"OnDelete", DeleteEvent{}},
 	"deployment":     {"OnDeployment", DeploymentEvent{}},
+	"issue_comment":  {"OnIssueComment", IssueCommentEvent{}},
 	"ping":           {"OnPing", PingEvent{}},
+	"pull_request":   {"OnPullRequest", PullRequestEvent{}},
+	"push":           {"OnPush", PushEvent{}},
 }
 
 func (l *WebhookListener) GetHttpListener() http.HandlerFunc {
