@@ -255,6 +255,7 @@ type PullRequestEvent struct {
 	Action      string       `json:"action"`
 	Number      int64        `json:"number"`
 	PullRequest *PullRequest `json:"pull_request"`
+	Label       *Label       `json:"label"`
 }
 
 type PushEvent struct {
